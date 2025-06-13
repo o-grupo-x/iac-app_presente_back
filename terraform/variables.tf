@@ -16,26 +16,14 @@ variable "zone" {
   default     = "us-central1-a"
 }
 
-variable "instance_name" {
-  description = "Name of the VM instance"
+variable "cluster_name" {
+  description = "Name of the GKE cluster"
   type        = string
-  default     = "instance-grafana-prometheus"
+  default     = "frontend-cluster"
 }
 
-variable "ssh_public_key" {
-  description = "SSH public key content"
-  type        = string
-  default     = ""
-}
-
-variable "commit_id" {
-  description = "Commit ID used to uniquely name resources"
-  type        = string
-  default     = ""
-}
-
-variable "network_name" {
-  description = "VPC network to deploy resources in"
-  type        = string
-  default     = "default"
+variable "node_count" {
+  description = "Number of nodes in the primary node pool"
+  type        = number
+  default     = 2
 }

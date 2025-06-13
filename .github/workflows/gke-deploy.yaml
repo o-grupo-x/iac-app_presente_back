@@ -1,0 +1,53 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main, dev, gui]
+  pull_request:
+    branches: [main, dev, gui]
+
+env:
+  PROJECT_ID: app-chamada-5706
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.4
+      - name: Restore credentials
+        run: echo "${{ secrets.GCP_CREDENTIALS_B64 }}" | base64 -d > terraform/credentials.json
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+  build-and-deploy:
+    needs: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_CREDENTIALS_B64 }}
+          export_default_credentials: true
+      - name: Configure Docker
+        run: gcloud auth configure-docker -q
+      - name: Build image
+        run: |
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }} .
+      - name: Push image
+        run: |
+          docker push gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }}
+      - name: Get cluster credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --zone ${{ secrets.GKE_CLUSTER_ZONE }} --project ${{ env.PROJECT_ID }}
+      - name: Deploy
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deployment/frontend frontend=gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }}
