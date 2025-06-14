@@ -1,14 +1,14 @@
 output "cluster_name" {
-  value = google_container_cluster.frontend.name
+  value = google_container_cluster.app_chamada_production.name
 }
 output "cluster_zone" {
-  value = google_container_cluster.frontend.location
+  value = google_container_cluster.app_chamada_production.location
 }
 output "endpoint" {
-  value = google_container_cluster.frontend.endpoint
+  value = google_container_cluster.app_chamada_production.endpoint
 }
 output "kubernetes_cluster_name" {
-  value = google_container_cluster.frontend.name
+  value = google_container_cluster.app_chamada_production.name
 }
 
 output "prometheus_service_ip" {
