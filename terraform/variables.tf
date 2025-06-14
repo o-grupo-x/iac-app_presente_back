@@ -37,5 +37,5 @@ variable "machine_type" {
 variable "node_service_account" {
   description = "Service Account for Kubernetes nodes"
   type        = string
-  default     = "your-node-sa@app-chamada-5706.iam.gserviceaccount.com"
+  default     = "gke-node@app-chamada-5706.iam.gserviceaccount.com"
 }
