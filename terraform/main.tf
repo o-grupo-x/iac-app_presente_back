@@ -20,7 +20,7 @@ resource "google_container_node_pool" "app_chamada_production_nodes" {
   node_config {
     machine_type    = var.machine_type
     service_account = var.node_service_account
-    disk_size_gb    = 30
+    disk_size_gb    = 10
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
