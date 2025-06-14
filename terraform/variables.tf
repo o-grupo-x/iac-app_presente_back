@@ -19,7 +19,7 @@ variable "zone" {
 variable "cluster_name" {
   description = "Name of the GKE cluster"
   type        = string
-  default     = "frontend-cluster"
+  default     = "app-chamada-production"
 }
 
 variable "node_count" {
