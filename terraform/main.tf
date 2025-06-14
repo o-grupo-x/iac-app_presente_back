@@ -3,19 +3,19 @@ resource "google_container_cluster" "app_chamada_production" {
   location = var.region
 
   remove_default_node_pool = true
-  initial_node_count       = 1
+
+  ip_allocation_policy {}
 
   node_config {
     machine_type    = var.machine_type
     service_account = var.node_service_account
-    disk_size_gb    = 30 # or 20
+    disk_size_gb    = 30
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
-
-  ip_allocation_policy {}
 }
+
 
 resource "google_container_node_pool" "app_chamada_production_nodes" {
   name       = "primary-node-pool"

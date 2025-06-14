@@ -19,7 +19,6 @@ variable "zone" {
 variable "cluster_name" {
   description = "Name of the GKE cluster"
   type        = string
-  default     = "app-chamada-production"
 }
 
 variable "node_count" {
@@ -44,4 +43,11 @@ variable "node_service_account" {
 variable "namespace_name" {
   description = "Namespace for the app"
   default     = "app-chamada-production"
+}
+
+
+variable "delete_old_clusters" {
+  description = "Whether to delete old clusters (true/false)"
+  type        = bool
+  default     = false
 }
