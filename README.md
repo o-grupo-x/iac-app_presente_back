@@ -27,7 +27,13 @@ This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys 
 4. Configure kubectl using `gcloud container clusters get-credentials` and apply the manifests in `k8s/`:
 
    ```bash
-   kubectl apply -f k8s/
-   ```
+    kubectl apply -f k8s/
+    ```
 
 The GitHub Actions workflow performs the same steps automatically on every push.
+
+## Connecting Grafana
+
+Prometheus is exposed via a NodePort service on port `30900`. To connect an
+external Grafana instance, find the external IP of any cluster node and use
+`http://<NODE_IP>:30900` as the Prometheus data source URL.
