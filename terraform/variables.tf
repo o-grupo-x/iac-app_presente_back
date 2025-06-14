@@ -39,3 +39,9 @@ variable "node_service_account" {
   type        = string
   default     = "gke-node@app-chamada-5706.iam.gserviceaccount.com"
 }
+
+
+variable "namespace_name" {
+  description = "Namespace for the app"
+  default     = "app-chamada-production"
+}
