@@ -21,6 +21,7 @@ This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys 
    terraform init
    terraform apply
    ```
+   
 3. Build and push the Docker image:
 
    ```bash
