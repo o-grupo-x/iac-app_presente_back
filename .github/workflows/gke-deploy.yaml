@@ -11,13 +11,18 @@ env:
   PROJECT_ID: app-chamada-5706
   REGION: us-central1
   DELETE_OLD_CLUSTERS: "false"
-  CLUSTER_NAME: app-prod-${{ github.sha::8 }}
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set Short Commit SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -34,14 +39,14 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve -var="cluster_name=${{ env.CLUSTER_NAME }}"
+        run: terraform apply -auto-approve -var="cluster_name=app-prod-${{ steps.vars.outputs.short_sha }}"
 
       - name: Delete Old Clusters (Optional)
         if: env.DELETE_OLD_CLUSTERS == 'true'
         run: |
           clusters=$(gcloud container clusters list --format="value(name)")
           for cluster in $clusters; do
-            if [[ "$cluster" != "${{ env.CLUSTER_NAME }}" ]]; then
+            if [[ "$cluster" != "app-prod-${{ steps.vars.outputs.short_sha }}" ]]; then
               echo "Deleting cluster $cluster"
               gcloud container clusters delete $cluster --quiet --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
             fi
@@ -73,7 +78,7 @@ jobs:
 
       - name: Get cluster credentials
         run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
+          gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
 
       - name: Deploy Frontend & Prometheus
         run: |
