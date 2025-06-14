@@ -9,7 +9,9 @@ on:
 
 env:
   PROJECT_ID: app-chamada-5706
+  REGION: us-central1
   DELETE_OLD_CLUSTERS: "false"
+  CLUSTER_NAME: app-prod-${{ github.sha::8 }}
 
 jobs:
   terraform:
@@ -32,16 +34,16 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve -var="cluster_name=app-chamada-production-${{ github.sha }}"
+        run: terraform apply -auto-approve -var="cluster_name=${{ env.CLUSTER_NAME }}"
 
       - name: Delete Old Clusters (Optional)
         if: env.DELETE_OLD_CLUSTERS == 'true'
         run: |
           clusters=$(gcloud container clusters list --format="value(name)")
           for cluster in $clusters; do
-            if [[ $cluster != "app-chamada-production-${{ github.sha }}" ]]; then
+            if [[ "$cluster" != "${{ env.CLUSTER_NAME }}" ]]; then
               echo "Deleting cluster $cluster"
-              gcloud container clusters delete $cluster --quiet --region us-central1 --project ${{ env.PROJECT_ID }}
+              gcloud container clusters delete $cluster --quiet --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
             fi
           done
 
@@ -71,7 +73,7 @@ jobs:
 
       - name: Get cluster credentials
         run: |
-          gcloud container clusters get-credentials app-chamada-production-${{ github.sha }} --region us-central1 --project ${{ env.PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
 
       - name: Deploy Frontend & Prometheus
         run: |
