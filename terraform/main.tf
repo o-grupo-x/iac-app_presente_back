@@ -27,11 +27,11 @@ resource "google_container_node_pool" "app_chamada_production_nodes" {
     ]
   }
 
-  initial_node_count = 2
+  initial_node_count = 1
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 5
+    max_node_count = 4
   }
 
   management {
