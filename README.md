@@ -3,7 +3,6 @@
 This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys the frontend application. A small Prometheus instance runs inside the cluster and exposes metrics so an external Grafana deployment can scrape them.
 
 ## Prerequisites
-
 - Docker
 - Terraform >= 1.8
 - gcloud CLI configured for a Google Cloud project with Kubernetes Engine enabled
