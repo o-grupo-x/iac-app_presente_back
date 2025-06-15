@@ -1,9 +1,9 @@
 resource "google_container_cluster" "app_chamada_production" {
-  name     = var.cluster_name
-  location = var.region
+  name                     = var.cluster_name
+  location                 = var.region
 
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 0 # Changed from 1 to 0
 
   release_channel {
     channel = "REGULAR"
@@ -31,7 +31,7 @@ resource "google_container_node_pool" "app_chamada_production_nodes" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 4
+    max_node_count = 5
   }
 
   management {
