@@ -3,6 +3,7 @@ resource "google_container_cluster" "app_chamada_production" {
   location                 = var.region
 
   remove_default_node_pool = true
+  # Make sure the 'initial_node_count' line is completely removed from here.
 
   release_channel {
     channel = "REGULAR"
