@@ -10,6 +10,9 @@ resource "google_container_cluster" "app_chamada_production" {
   }
 
   networking_mode = "VPC_NATIVE"
+
+  # Opcional, mas recomendado
+  ip_allocation_policy {}  # Habilita VPC nativa automática
 }
 
 resource "google_container_node_pool" "app_chamada_production_nodes" {
@@ -20,11 +23,20 @@ resource "google_container_node_pool" "app_chamada_production_nodes" {
   node_config {
     machine_type    = var.machine_type
     service_account = var.node_service_account
-    disk_size_gb    = 10
+    disk_size_gb    = 20 
     disk_type       = "pd-standard"
+
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+
+    labels = {
+      env = "production"
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
   }
 
   initial_node_count = 1
