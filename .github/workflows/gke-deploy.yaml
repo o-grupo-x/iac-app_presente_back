@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Provision Infrastructure
 
 on:
   push:
@@ -52,7 +52,12 @@ jobs:
             fi
           done
 
-  build-and-deploy:
+      - name: Verify Cluster
+        if: env.DELETE_OLD_CLUSTERS != 'true'
+        run: |
+          gcloud container clusters describe app-prod-${{ steps.vars.outputs.short_sha }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
+
+  deploy-prometheus:
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -67,21 +72,11 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Configure Docker
-        run: gcloud auth configure-docker -q
-
-      - name: Build image
-        run: docker build -t gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }} .
-
-      - name: Push image
-        run: docker push gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }}
 
       - name: Get cluster credentials
         run: |
           gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
 
-      - name: Deploy Frontend & Prometheus
+      - name: Deploy Prometheus
         run: |
-          kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl set image deployment/frontend frontend=gcr.io/${{ env.PROJECT_ID }}/frontend:${{ github.sha }}
           kubectl apply -f k8s/prometheus.yaml
