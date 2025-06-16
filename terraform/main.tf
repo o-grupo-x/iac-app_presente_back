@@ -1,19 +1,3 @@
-resource "google_container_cluster" "app_chamada_production" {
-  name                     = var.cluster_name
-  location                 = var.region
-  remove_default_node_pool = true
-  initial_node_count       = 1
-
-  release_channel {
-    channel = "REGULAR"
-  }
-
-  networking_mode = "VPC_NATIVE"
-
-  ip_allocation_policy {}
-
-}
-
 resource "google_container_node_pool" "app_chamada_production_nodes" {
   name       = "primary-node-pool"
   location   = google_container_cluster.app_chamada_production.location
