@@ -62,3 +62,7 @@ variable "delete_old_clusters" {
   type        = bool
   default     = false
 }
+
+variable "zone" {
+  default = "us-central1-a"
+}
