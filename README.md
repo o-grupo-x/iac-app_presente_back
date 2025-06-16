@@ -1,15 +1,14 @@
-# Frontend Infrastructure on GKE
+# Infrastructure on GKE
 
-This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys the frontend application. A small Prometheus instance runs inside the cluster and exposes metrics so an external Grafana deployment can scrape them.
+This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys a Prometheus instance for metrics collection. No application images are built or deployed by default.
 
 ## Prerequisites
-- Docker
 - Terraform >= 1.8
 - gcloud CLI configured for a Google Cloud project with Kubernetes Engine enabled
 
 ### Required GitHub Secrets
 
-- `GCP_CREDENTIALS_B64` – base64 encoded service account key with permissions for GKE and GCR
+- `GCP_CREDENTIALS_B64` – base64 encoded service account key with permissions for GKE
 
 ## Usage
 
@@ -22,18 +21,12 @@ This repository provisions a Google Kubernetes Engine (GKE) cluster and deploys 
    terraform apply
    ```
    
-3. Build and push the Docker image:
-
-   ```bash
-   docker build -t gcr.io/<PROJECT_ID>/frontend:latest .
-   docker push gcr.io/<PROJECT_ID>/frontend:latest
-   ```
-4. Configure kubectl using `gcloud container clusters get-credentials` and apply the manifests in `k8s/`:
+3. Configure kubectl using `gcloud container clusters get-credentials` and apply the Prometheus manifest:
 
    ```bash
    gcloud container clusters get-credentials $(terraform output -raw cluster_name) \
      --zone $(terraform output -raw cluster_zone)
-   kubectl apply -f k8s/
+   kubectl apply -f k8s/prometheus.yaml
    ```
 
 The GitHub Actions workflow performs these steps automatically on every push.
