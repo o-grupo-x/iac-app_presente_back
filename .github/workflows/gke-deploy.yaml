@@ -80,6 +80,11 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Install GKE Auth Plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
       - name: Get cluster credentials
         run: |
           gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} \
