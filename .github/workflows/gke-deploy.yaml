@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
+      cluster_name: app-prod-${{ steps.vars.outputs.short_sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +79,9 @@ jobs:
 
       - name: Get cluster credentials
         run: |
-          gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ needs.terraform.outputs.cluster_name }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }}
 
       - name: Deploy Frontend & Prometheus
         run: |
