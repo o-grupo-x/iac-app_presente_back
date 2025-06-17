@@ -82,7 +82,7 @@ jobs:
       - name: Get cluster credentials
         run: |
           gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} \
-            --region ${{ env.REGION }} \
+            --zone ${{ env.ZONE }} \
             --project ${{ env.PROJECT_ID }}
 
       - name: Deploy Prometheus
