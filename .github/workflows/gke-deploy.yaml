@@ -10,6 +10,7 @@ on:
 env:
   PROJECT_ID: app-chamada-5706
   REGION: us-central1
+  ZONE: us-central1-a
   DELETE_OLD_CLUSTERS: "true"
 
 jobs:
