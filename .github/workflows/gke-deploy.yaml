@@ -42,7 +42,7 @@ jobs:
         id: check
         run: |
           if gcloud container clusters describe app-prod-${{ steps.vars.outputs.short_sha }} \
-            --region ${{ env.REGION }} \
+            --zone ${{ env.ZONE }} \
             --project ${{ env.PROJECT_ID }} >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
@@ -57,11 +57,11 @@ jobs:
       - name: Delete Old Clusters (Optional)
         if: env.DELETE_OLD_CLUSTERS == 'true' && steps.check.outputs.exists == 'false'
         run: |
-          clusters=$(gcloud container clusters list --region ${{ env.REGION }} --format="value(name)")
+          clusters=$(gcloud container clusters list --zone ${{ env.ZONE }} --format="value(name)")
           for cluster in $clusters; do
             if [[ "$cluster" != "app-prod-${{ steps.vars.outputs.short_sha }}" ]]; then
               echo "Deleting cluster $cluster"
-              gcloud container clusters delete $cluster --quiet --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }}
+              gcloud container clusters delete $cluster --quiet --zone ${{ env.ZONE }} --project ${{ env.PROJECT_ID }}
             fi
           done
 
@@ -83,7 +83,7 @@ jobs:
       - name: Get cluster credentials
         run: |
           gcloud container clusters get-credentials app-prod-${{ needs.terraform.outputs.short_sha }} \
-            --region ${{ env.REGION }} \
+            --zone ${{ env.ZONE }} \
             --project ${{ env.PROJECT_ID }}
 
       - name: Deploy Prometheus
