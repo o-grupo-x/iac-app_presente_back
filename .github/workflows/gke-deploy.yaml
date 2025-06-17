@@ -1,4 +1,4 @@
-name: Create Cluster Name and Save as Org Secret
+name: Create Cluster Name and Save as Org Variable
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
 
 env:
   ORG_NAME: o-grupo-x
-  SECRET_NAME: GKE_CLUSTER_NAME
+  VAR_NAME: GKE_CLUSTER_NAME
 
 jobs:
-  create-secret:
+  create-variable:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -24,45 +24,16 @@ jobs:
         id: cluster
         run: echo "cluster_name=app-prod-${{ steps.vars.outputs.short_sha }}" >> $GITHUB_OUTPUT
 
-      - name: Install dependencies
-        run: sudo apt-get install -y jq moreutils libsodium-dev
-
-      - name: Get GitHub Public Key
-        id: get_pub_key
-        run: |
-          RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
-            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/public-key)
-
-          echo "PUBLIC_KEY=$(echo $RESPONSE | jq -r .key)" >> $GITHUB_ENV
-          echo "KEY_ID=$(echo $RESPONSE | jq -r .key_id)" >> $GITHUB_ENV
-
-      - name: Encrypt Secret Value
-        id: encrypt
+      - name: Upload Organization Variable
         run: |
           CLUSTER_NAME="app-prod-${{ steps.vars.outputs.short_sha }}"
-
-          ENCRYPTED=$(python3 -c "
-          import base64
-          import nacl.encoding
-          import nacl.public
-          import sys
-          
-          public_key = '${{ env.PUBLIC_KEY }}'
-          sealed_box = nacl.public.SealedBox(nacl.public.PublicKey(base64.b64decode(public_key)))
-          encrypted = sealed_box.encrypt(CLUSTER_NAME.encode('utf-8'))
-          print(base64.b64encode(encrypted).decode('utf-8'))
-          ")
-          echo "ENCRYPTED_VALUE=$ENCRYPTED" >> $GITHUB_ENV
-
-      - name: Upload Secret to Organization
-        run: |
-          curl -X PUT \
-            -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
-            -H "Content-Type: application/json" \
-            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/${{ env.SECRET_NAME }} \
-            -d @- <<EOF
-          {
-            "encrypted_value": "${{ env.ENCRYPTED_VALUE }}",
-            "key_id": "${{ env.KEY_ID }}"
-          }
-          EOF
+          curl -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/variables/${{ env.VAR_NAME }} \
+            -d "{\"name\":\"${{ env.VAR_NAME }}\", \"value\":\"$CLUSTER_NAME\"}" \
+          || curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/variables \
+            -d "{\"name\":\"${{ env.VAR_NAME }}\", \"value\":\"$CLUSTER_NAME\"}"
