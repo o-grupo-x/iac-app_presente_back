@@ -54,6 +54,20 @@ jobs:
         working-directory: terraform
         run: terraform apply -auto-approve -var="cluster_name=app-prod-${{ steps.vars.outputs.short_sha }}"
 
+      - name: Wait for Operations to Complete
+        if: env.DELETE_OLD_CLUSTERS == 'true' && steps.check.outputs.exists == 'false'
+        run: |
+          while true; do
+            ops=$(gcloud container operations list --zone ${{ env.ZONE }} --filter="status=RUNNING" --format="value(name)")
+            if [[ -z "$ops" ]]; then
+              echo "No running operations."
+              break
+            else
+              echo "Waiting for operations to finish: $ops"
+              sleep 30
+            fi
+          done
+
       - name: Delete Old Clusters (Optional)
         if: env.DELETE_OLD_CLUSTERS == 'true' && steps.check.outputs.exists == 'false'
         run: |
