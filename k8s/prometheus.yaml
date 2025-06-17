@@ -12,19 +12,28 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 30s
+
     scrape_configs:
-      - job_name: 'kubernetes'
+      - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
           - role: pod
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
             regex: true
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
             action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+            replacement: ${1}
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: (.+):(?:\d+);(\d+)
+            replacement: ${1}:${2}
             target_label: __address__
-            regex: (\d+)
-            replacement: $1
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+
       - job_name: 'self'
         static_configs:
           - targets: ['localhost:9090']
@@ -52,15 +61,20 @@ spec:
           image: prom/prometheus:latest
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
           ports:
             - containerPort: 9090
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus/
+            - name: prometheus-data
+              mountPath: /prometheus
       volumes:
         - name: config
           configMap:
             name: prometheus-config
+        - name: prometheus-data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -68,9 +82,10 @@ metadata:
   name: prometheus
   namespace: monitoring
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: prometheus
   ports:
     - port: 9090
       targetPort: 9090
+      protocol: TCP
