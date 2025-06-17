@@ -20,40 +20,10 @@ jobs:
         id: vars
         run: echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
-      - name: Create Cluster Name
-        id: cluster
-        run: echo "cluster_name=app-prod-${{ steps.vars.outputs.short_sha }}" >> $GITHUB_OUTPUT
-
-      - name: Get GitHub Public Key
-        id: get_pub_key
-        run: |
-          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
-            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/public-key)
-
-          echo "key_id=$(echo $RESPONSE | jq -r .key_id)" >> $GITHUB_OUTPUT
-          echo "public_key=$(echo $RESPONSE | jq -r .key)" >> $GITHUB_OUTPUT
-
-      - name: Encrypt Secret Value
-        id: encrypt
-        run: |
-          CLUSTER_NAME="app-prod-${{ steps.vars.outputs.short_sha }}"
-          PUBLIC_KEY="${{ steps.get_pub_key.outputs.public_key }}"
-
-          ENCRYPTED=$(echo -n "$CLUSTER_NAME" | \
-            openssl rsautl -encrypt -pubin -inkey <(echo "-----BEGIN PUBLIC KEY-----\n$PUBLIC_KEY\n-----END PUBLIC KEY-----") \
-            | base64 | tr -d '\n')
-
-          echo "encrypted_value=$ENCRYPTED" >> $GITHUB_OUTPUT
-
       - name: Upload Secret to Organization
-        run: |
-          curl -X PUT \
-            -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
-            -H "Content-Type: application/json" \
-            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/${{ env.SECRET_NAME }} \
-            -d @- <<EOF
-          {
-            "encrypted_value": "${{ steps.encrypt.outputs.encrypted_value }}",
-            "key_id": "${{ steps.get_pub_key.outputs.key_id }}"
-          }
-          EOF
+        uses: cschleiden/gh-action-create-org-secret@v1
+        with:
+          secret-name: ${{ env.SECRET_NAME }}
+          secret-value: app-prod-${{ steps.vars.outputs.short_sha }}
+          organization: ${{ env.ORG_NAME }}
+          token: ${{ secrets.PAT_GITHUB }}
