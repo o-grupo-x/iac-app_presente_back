@@ -20,10 +20,49 @@ jobs:
         id: vars
         run: echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
+      - name: Create Cluster Name
+        id: cluster
+        run: echo "cluster_name=app-prod-${{ steps.vars.outputs.short_sha }}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: sudo apt-get install -y jq moreutils libsodium-dev
+
+      - name: Get GitHub Public Key
+        id: get_pub_key
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
+            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/public-key)
+
+          echo "PUBLIC_KEY=$(echo $RESPONSE | jq -r .key)" >> $GITHUB_ENV
+          echo "KEY_ID=$(echo $RESPONSE | jq -r .key_id)" >> $GITHUB_ENV
+
+      - name: Encrypt Secret Value
+        id: encrypt
+        run: |
+          CLUSTER_NAME="app-prod-${{ steps.vars.outputs.short_sha }}"
+
+          ENCRYPTED=$(python3 -c "
+          import base64
+          import nacl.encoding
+          import nacl.public
+          import sys
+          
+          public_key = '${{ env.PUBLIC_KEY }}'
+          sealed_box = nacl.public.SealedBox(nacl.public.PublicKey(base64.b64decode(public_key)))
+          encrypted = sealed_box.encrypt(CLUSTER_NAME.encode('utf-8'))
+          print(base64.b64encode(encrypted).decode('utf-8'))
+          ")
+          echo "ENCRYPTED_VALUE=$ENCRYPTED" >> $GITHUB_ENV
+
       - name: Upload Secret to Organization
-        uses: cschleiden/gh-action-create-org-secret@v1
-        with:
-          secret-name: ${{ env.SECRET_NAME }}
-          secret-value: app-prod-${{ steps.vars.outputs.short_sha }}
-          organization: ${{ env.ORG_NAME }}
-          token: ${{ secrets.PAT_GITHUB }}
+        run: |
+          curl -X PUT \
+            -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/orgs/${{ env.ORG_NAME }}/actions/secrets/${{ env.SECRET_NAME }} \
+            -d @- <<EOF
+          {
+            "encrypted_value": "${{ env.ENCRYPTED_VALUE }}",
+            "key_id": "${{ env.KEY_ID }}"
+          }
+          EOF
